@@ -4,17 +4,38 @@ import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client";
 import { LikePostDocument, PostPageDocument } from "./__generated__/graphql";
 
-export default function PostPage() {
+function usePostIdParam() {
   const { postId } = useParams<{ postId: string }>();
+
+  if (!postId) {
+    throw new Error("Missing parameter postId in URL path");
+  }
+
+  return postId;
+}
+
+export default function PostPage() {
+
+  const blogPostId = usePostIdParam();
+
+  // ÜBUNG: useQuery #2
+  //  - Wenn du in der PostListPage auf einen BlogPost klickst, sollte dieser hier dargestellt werden
+  //  - leider funktionieren hier weder der Query noch die Mutation zum Liken 😰
+  //
+  //  - Kannst Du Query und Mutation so ergänzen, dass die beiden funktionieren
+  //    - dann sollte der BlogPost angezeigt werden
+  //    - unter dem BlogPost ist ein "Like"-Button, der dann auch funktionieren sollte
 
   const { loading, error, data } = useQuery(PostPageDocument, {
     variables: {
-      postId: postId!
+      postId: blogPostId
     }
   });
 
   const [likePost] = useMutation(LikePostDocument, {
-    variables: { postId: postId! }
+    variables: {
+      postId: blogPostId
+    }
   });
 
   if (loading) {
