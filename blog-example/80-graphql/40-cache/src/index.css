@@ -193,3 +193,9 @@ article h2 {
   color: var(--color-primary);
   border-bottom: 1px solid var(--color-main);
 }
+
+.Comment {
+  padding: 0.5rem;
+  border: 1px solid var(--color-main);
+  margin-bottom: 0.5rem;
+}

@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const { ApolloServer, AuthenticationError, PubSub, withFilter } = require("apollo-server");
 const typeDefs = require("./schema");
 const datastore = require("./datastore");
+const commentsData = require("./comments-data");
 
 const pubsub = new PubSub();
 
@@ -57,7 +58,18 @@ const resolvers = {
       }
       return datastore.getPost(postId);
     },
-    users: () => datastore.getAllUsers()
+    users: () => datastore.getAllUsers(),
+    comments(_, {postId}) {
+      const commentsForPost = commentsData.filter(c => c.postId === postId);
+      if (slowDownPost > 0) {
+        return new Promise(res => {
+          setTimeout(() => res(commentsForPost), slowDownPost * 3);
+        });
+      }
+
+      return commentsForPost;
+
+    }
   },
   BlogPost: {
     user: blogPost => datastore.getUser(blogPost.userId),

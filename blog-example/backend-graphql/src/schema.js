@@ -1,4 +1,11 @@
 module.exports = `
+
+type Comment {
+  id: ID!
+  comment: String!
+  username: String!
+}
+
 type BlogPost {
   id: ID!
   title: String!
@@ -23,6 +30,10 @@ type Query {
   posts(page: Int, pageSize: Int): [BlogPost!]!
   users: [User!]!
   post(postId: ID!): BlogPost
+  """
+  In einer 'echten' GraphQL API, waeren die Comments wahrscheinlich direkt am Post Objekt
+  """
+  comments(postId: ID!): [Comment!]!
 }
 
 type LoginResult {

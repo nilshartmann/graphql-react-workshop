@@ -1180,6 +1180,285 @@ const mock: MockedResponse<PostListPageQuery> = {
 * Die Beschreibung dazu findest Du dann in der kopierten `PostEditorPage`-Datei
 * Eine mögliche Lösung findest Du in `steps/80-graphql/40-cache/src`
 * Wenn Du fertig bist, bitte virtuell die Hand heben ✋
+---
+## Suspense
+---
+### Suspense
+
+* Mit Suspense bietet React neue Möglichkeiten, mit asynchronen Resourcen umzugehen
+* Bislang musste man dafür `useEffect` verwenden (oder `loading`, `error` etc. aus `useQuery`)
+* Dann wurde die Komponente einmal gerendert, dann das Laden gestartet und dann noch einmal, sobald Daten geladen wurden
+  * Das ist bei `useQuery` nicht anders, nur versteckt in der Bibliothek
+* Mit Suspense kann man "Sollbruch-Stellen" einziehen, an denen React das Rendern unterbricht, solange es auf "etwas" wartet
+  * "etwas" kann zum Beispiel ein ausstehender GraphQL sein
+---
+### Suspense
+* Um Suspense nutzen zu können, müssen die Bibliothek dazu vorbereitet sein
+* Dazu gehören zzt.
+  * React Router
+  * React/TanStack Query
+  * TanStack Router
+  * Apollo GraphQL Client
+---
+### Suspense in Apollo
+* Im Apollo Client kann man den `useSuspenseQuery`-Hook verwenden
+* Der funktioniert genauso, wie `useQuery` arbeitet aber mit dem Suspense-Mechanismus von React zusammen
+* Mit der React `Suspense`-Komponente kann dann festgelegt werden, an welchen Stellen das Rendern einer Komponentenhierarchie unterbrochen wird
+* Das Rendern wird so lange unterbrochen, bis keine ausstehenden Promises mehr da sind
+* Solange wird eine `Fallback`-Komponente angezeigt, die als Property übergeben wird
+* ```typescript
+
+  export default function PostPage() {
+    const postId = "...";
+
+    return (
+      <React.Suspense fallback={<h1>Please wait...</h1>}>
+        <PostDisplay postId={postId} />
+      </React.Suspense>
+    );
+  }
+  function PostDisplay({ postId }: PostDisplayProps) {
+    const { data } = useSuspenseQuery(PostPageDocument, {
+      variables: {
+        postId: postId
+      }
+    });
+
+    // data ist hier auf jeden Fall gesetzt
+  }
+  ```
+---
+### Suspense: Error Handling
+
+* Wenn bei `useQuery` ein Fehler auftritt, liefert `useQuery` `error` zurück
+* Das funktioniert mit `useSuspenseQuery` nicht, da der Kontrakt von Suspense vorsieht, dass es nur "weitergeht", wenn das Promise erfolgreich aufgelöst wurde
+  * also: der Request erfolgreich war
+* Wenn `useSuspenseQuery` *nicht* erfolgreich ist, wird ein Fehler aufgelöst, der mit einer [Error Bounadry](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)-Komponente aufgegangen werden kann
+---
+### Error Boundaries
+* Eine Error Boundary-Komponente ist eine Art `catch`-Block für die Renderphase von Komponente
+* Error Boundary-Komponenten kann man überall in seiner Komponenten-Hierarchie einziehen
+* Render-Fehler, die unterhalb auftreten, werden dann der Error Boundary-Komponente übergeben
+  * Das gilt für *alle* Fehler, die beim Rendern auftreten, nicht nur Fehler durch Suspense
+  * Dieses Verhalten ähnelt try-catch.
+* Ein Beispiel:
+* ```typescript
+  function MyApp() {
+    return (
+      <Layout>
+        <Header />
+        <MyErrorBoundary>
+            <Main>
+              <BlogPost />
+            </Main>
+            <NewsletterForm />
+        </MyErrorBoundary>
+      </Layout>
+    )
+  }
+  ```
+* Wenn es hier zum Fehler **während des Renderns** kommt:
+  * innerhalb von `Layout` oder `Header`: weiße Seite, Fehlermeldung auf der Console
+  * innerhalb von `Main`, `BlogPost` oder `NewsletterForm`: Error Boundary wird angezeigt, `Layout` und `Header`-Komponente bleiben unverändert (gerendert)
+---
+### Error Boundaries
+* Technisch handelt es sich dabei um eine fast "normale" React-Komponente
+* Diese muss allerdings noch mit der (alten) React JavaScript Klassen API gebaut werden
+* Diese Klasse muss dann die [getDerivedStateFromError](https://react.dev/reference/react/Component#static-getderivedstatefromerror) Callback-Funktion implementieren
+* Einfacher ist es, eine fertige Error Boundary-Komponente zu verwenden: [react-error-boundary](https://github.com/bvaughn/react-error-boundary)
+---
+### Error Boundary mit `react-error-boundary`
+* Die Error Boundary-Komponente aus der Bibliothek heißt - Überraschung! - `ErrorBoundary`
+* Die ist sehr flexibel zu konfigurieren
+* Man muss ihr mit dem Property [FallbackComponent eine Komponente übergeben](https://github.com/bvaughn/react-error-boundary?tab=readme-ov-file#errorboundary-with-fallbackcomponent-prop), die im Falle eines Fehlers gerendert werden soll
+  * (das ist euer "try-Block")
+* Diese Komponente bekommt dann als Property u.a. den Fehler übergeben:
+* ```typescript
+  import { FallbackProps } from "react-error-boundary";
+
+  function AppErrorMessage( { error }: FallbackProps) {
+
+    console.error("Something bad happend:", error);
+    return <h1>Something bad happend !</h1>;
+  }
+  ```
+* ```typescript
+  import { ErrorBoundary } from "react-error-boundary";
+  function MyApp() {
+    return (
+      <Layout>
+        <Header />
+        <ErrorBoundary fallback={AppErrorMessage}>
+            <Main>
+              <BlogPost />
+            </Main>
+            <NewsletterForm />
+        </ErrorBoundary>
+      </Layout>
+    )
+  }
+
+  ```
+---
+### react-error-boundary
+* Der `FallbackComponent`-Komponente wird überdies eine Funktion `resetErrorBoundary` übergeben
+* Die könnt ihr aufrufen, dann wird erneut versucht, den Komponenten-Tree unterhalb der `ErrorBoundary`-Komponente zu rendern
+* Das macht Sinn wenn es Grund zur Annahme gibt, der Fehler verschwinde später (z.B. Netzwerkverbindung ist wieder in Ordnung)
+* ```typescript
+  import { FallbackProps } from "react-error-boundary";
+
+  function AppErrorMessage( { error, resetErrorBoundary }: FallbackProps) {
+
+    console.error("Something bad happend:", error);
+    return (
+      <div>
+        <h1>Something bad happend !</h1>
+        <button onClick={ () => resetErrorBoundary() }>Try again!</button>
+      </div>
+    );
+  }
+  ```
+* Wenn ihr eine Möglichkeit habt, einen fehlerhaften Zustand zu reparieren, könnt ihr an der `ErrorBoundary`-Komponente eine `onReset`-Funktion angeben
+* Diese wird dann aufgerufen, wenn ihr `resetErrorBoundary` in der Fallback-Komponente aufruft
+---
+### react-error-boundary
+
+* Normalerweise werden Error Boundary-Komponenten von React nur dargestellt, wenn ein Fehler **beim Rendern** auftritt
+* Die `ErrorBoundary`-Komponente von `react-error-boundary` könnt ihr aber auch manuell rendern lassen, wenn z.B. in einem Event ein Fehler auftritt.
+  * So könnt ihr eure Fehlerbehandlung dann auf alle Arten von Fehlern in eurer Anwendung anwenden
+* Um die `ErrorBoundary`-Komponente anzuzeigen, verwendet ihr den `useErrorBoundary`-Hook:
+* ```typescript
+  import { useErrorBoundary } from "react-error-boundary";
+
+  function PostEditor() {
+    const { showBoundary } = useErrorBoundary();
+
+    async function saveBlogPost() {
+      try {
+        await fetch("...");
+      } catch (e) {
+        showBoundary("Could not save blog post");
+      }
+    }
+    return ...;
+  }
+  ```
+
+---
+### Übung: Suspense
+* **Stelle die `PostPage`-Komponente auf `Suspense` um.**
+* Damit es zur (künstlichen) Verzögerungen kommt:
+  * Beende das GraphQL Backend
+  * Starte das Backend mit `npm run start:slow` neu
+    * Alle `post`-GraphQL Queries sind nun künstlich verzögert
+* Als Vorlage kannst Du `material/PostPage_fuer_suspenseQuery_Uebung.txt` verwenden
+  * darin sind auch TODOs (`PostPage.tsx` in deinem Workspace damit überschreiben)
+* Verschiebe den Code aus `PostPage` in eine Wrapper-Komponente (`PostPageInternal` o.ä.)
+  * Ersetze darin den `useQuery`-Aufruf durch `useSuspenseQuery`
+* In der `PostPage` musst Du dann deine Wrapper-Komponente einbinden und mit `React.Suspense` ummanteln
+  * Was passiert, wenn Du keine Suspense-Komponente verwendest, sondern nur deine "Wrapper"-Komponente renderst?
+* Optional: Behandle Fehler mit einer `ErrorBoundary`-Komponente
+  * Einen Fehler kannst Du provozieren, in dem Du das Backend beendest
+* Lösung in `steps/50-suspense`
+---
+### Suspense: Konsequenzen
+
+* Worin unterscheidet sich das Verhalten? 🤔
+* ```typescript
+  function HelloQuery() {
+    const result = useQuery(/* ... */);
+
+    console.log("Hallo");
+    return /* ... */;
+  ```
+* ```typescript
+  function HelloSuspense() {
+    const result = useSuspenseQuery(/* ... */);
+
+    console.log("Hallo");
+    return /* ... */;
+  ```
+---
+### Suspense: Konsequenzen
+* In der `useSuspenseQuery`-Variante wird das "Hallo" erst ausgegeben, wenn der Query erfolgreich war
+* Auch die zurückgelieferte UI wird erst gerendet, wenn der Query erfolgreich war.
+* Das muss kein Problem sein, wir können in einer Oberkomponente z.B. steuern, wo Platzhalter angezeigt werden:
+* ```typescript
+  function Page() {
+
+    // Beide Queries - BlogList und Comments - werden parallel gestartet
+    return <section>
+      <Suspense fallback="..."><BlogList /></Supsense>
+      <Suspense fallback="..."><Comments /></Suspense>
+    </section>
+  ```
+---
+### Suspense: Wasserfälle
+
+* Es kann durch das Verhalten aber zu "Wasserfällen" kommen, bei denen mehrere Request *nacheinander* statt *parallel* abgearbeitet werden
+* ```typescript
+  function BlogPostPage( { postId } ) {
+
+    const result = useSuspenseQuery(BlogPostQuery);
+
+    return <section>
+      <Post post={result.data} />
+      <Comments postId={postId} />
+    </section>
+  ```
+* ```typescript
+  function Comments( { postId }) {
+    const comments = useSuspenseQuery(CommentsQuery);
+
+    // ...
+  }
+  ```
+* Hier wird der `CommentsQuery` erst ausgelöst *nachdem* der `BlogPostQuery` beendet wurde
+  * Dauer ist also Länge-BlogPostQuery plus Länge-CommentsQuery
+---
+### Suspense: Daten vorladen
+
+* Mit [useBackgroundQuery](https://www.apollographql.com/docs/react/api/react/hooks/#usebackgroundquery) können solche [Wasserfälle vermieden](https://www.apollographql.com/docs/react/data/suspense/#avoiding-request-waterfalls) werden
+* Damit startet man in einer Oberkomponente den Request, aber ohne auf dessen Ergebnis zu warten
+  * Die (Typ-)Argumente sind ähnlich wie bei useQuery und useSuspenseQuery
+* Man bekommt eine `QueryReference` auf den laufenden Query, die man als Property weitergeben kann
+* In der Komponente, in der man die Daten benötigt, kann man mit [`useReadQuery`](https://www.apollographql.com/docs/react/api/react/hooks/#usereadquery) auf die Daten warten
+  * Das triggert ebenfalls das nächste Suspense-Boundary, falls die Daten noch nicht vorliegen
+* ```typescript
+  function BlogPostPage( { postId } ) {
+
+    const [ commentsRef ] = useBackgroundQuery(CommentsQuery);
+
+    const result = useSuspenseQuery(BlogPostQuery);
+
+    return <section>
+      <Post post={result.data} />
+      <Comments commentsRef={commentsRef} />
+    </section>
+  ```
+* ```typescript
+  function Comments( { commentsRef }) {
+    const comments = useReadData(commentsRef);
+
+    // ...
+  }
+  ```
+
+---
+### Übung: Daten vorladen
+* (Wenn du mit der vorherigen Übung nicht fertig geworden bist, kopiere dir bitte `80-graphql/50-suspense/src/PostPage.tsx` in deinen Workspace)
+* Erweitere die `PostPage`-Komponente, so dass sie die Daten des `PostComment` Queries vorlädt
+  * dieser Query samt TS-Typen ist bereits fertig
+* Vervollständige die Komponente `CommentView` (s. TODOs)
+* Binde die Komponente `CommentView` in `PostPageInternal` ein (hinter den "Like"-Button)
+* Überprüfe im Netzwerk-Tab deines Browsers, ob die beiden Requests parallel gestartet werden
+  * Der `CommentQuery` sollte doppelt so lange dauern wie der `PostPageQuery`
+  * Wie lange bleibt die `Suspense`-Fallback-Komponente sichtbar?
+  * Kannst du deine Anwendung so bauen, dass der BlogPost schon angezeigt wird, auch wenn der `CommentQuery` noch lädt?
+* Lösung in `55-background-query`
+---
+## "Exotische" Apollo Features
+
 
 ---
 ### Field Policies
@@ -1399,63 +1678,6 @@ const mock: MockedResponse<PostListPageQuery> = {
 * Weitere Hinweise findest Du in `bookmarks.ts`
 * Lösung: `steps/80-graphql/92-cache`
 * Wenn Du fertig bist, bitte virtuell die Hand heben ✋
-
----
-### Suspense
-
-* Mit Suspense bietet React neue Möglichkeiten, mit asynchronen Resourcen umzugehen
-* Bislang musste man dafür `useEffect` verwenden (oder `loading`, `error` etc. aus `useQuery`)
-* Dann wurde die Komponente einmal gerendert, dann das Laden gestartet und dann noch einmal, sobald Daten geladen wurden
-  * Das ist bei `useQuery` nicht anders, nur versteckt in der Bibliothek
-* Mit Suspense kann man "Sollbruch-Stellen" einziehen, an denen React das Rendern unterbricht, solange es auf "etwas" wartet
-  * "etwas" kann zum Beispiel ein ausstehender GraphQL sein
----
-### Suspense
-* Um Suspense nutzen zu können, müssen die Bibliothek dazu vorbereitet sein
-* Dazu gehören zzt.
-  * React Router
-  * React/TanStack Query
-  * TanStack Router
-  * Apollo GraphQL Client
----
-### Suspense
-* Im Apollo Client kann man den `useSuspenseQuery`-Hook verwenden
-* Der funktioniert genauso, wie `useQuery` arbeitet aber mit dem Suspense-Mechanismus von React zusammen
-* Mit der React `Suspense`-Komponente kann dann festgelegt werden, an welchen Stellen das Rendern einer Komponentenhierarchie unterbrochen wird
-* Das Rendern wird so lange unterbrochen, bis keine ausstehenden Promises mehr da sind
-* Solange wird eine `Fallback`-Komponente angezeigt, die als Property übergeben wird
-* ```typescript
-
-  export default function PostPage() {
-    const postId = "...";
-  
-    return (
-      <React.Suspense fallback={<h1>Please wait...</h1>}>
-        <PostDisplay postId={postId} />
-      </React.Suspense>
-    );
-  }
-  function PostDisplay({ postId }: PostDisplayProps) {
-    const { data } = useSuspenseQuery(PostPageDocument, {
-      variables: {
-        postId: postId!
-      }
-    });
-
-    // data ist hier auf jeden Fall gesetzt
-  }
-  ```
-<!-- ---
-### Übung: Suspense
-* **Stelle die `PostPage`-Komponente auf `Suspense` um.**
-* Damit es zur (künstlichen) Verzögerungen kommt:
-  * Beende das GraphQL Backend
-  * Starte das Backend mit `npm run start:slow` neu
-    * Alle `post`-GraphQL Queries sind nun künstlich verzögert
-* In der `PostPage` musst Du `useSuspenseQuery` verwenden
-* Du musst eine "Wrapper-Komponente" bauen, in der Du dann `Suspense` verwendest
-  * Was passiert, wenn Du das nicht machst?
-* Lösung in `steps/35-graphql-advanced` -->
 
 
   </textarea

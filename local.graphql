@@ -19,6 +19,12 @@ type BlogPost {
     user: User!
 }
 
+type Comment {
+    comment: String!
+    id: ID!
+    username: String!
+}
+
 type CreateBlogPostResult {
     blogPost: BlogPost
     error: String
@@ -42,6 +48,8 @@ type Mutation {
 }
 
 type Query {
+    "In einer 'echten' GraphQL API, waeren die Comments wahrscheinlich direkt am Post Objekt"
+    comments(postId: ID!): [Comment!]!
     ping(msg: String): String!
     post(postId: ID!): BlogPost
     posts(page: Int, pageSize: Int): [BlogPost!]!

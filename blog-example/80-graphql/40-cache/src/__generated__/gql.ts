@@ -15,6 +15,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 const documents = {
     "mutation AddBlogPost($postData: NewBlogPost!) {\n  newPost: createBlogPost(postData: $postData) {\n    error\n    blogPost {\n      id\n      title\n      date\n      body\n      user {\n        id\n        name\n      }\n    }\n  }\n}": types.AddBlogPostDocument,
     "mutation LikePost($postId: ID!) {\n  likePost(postId: $postId) {\n    blogPost {\n      id\n      likes\n    }\n  }\n}": types.LikePostDocument,
+    "query PostComments($postId: ID!) {\n  comments(postId: $postId) {\n    id\n    comment\n    username\n  }\n}": types.PostCommentsDocument,
     "query PostListPage {\n  posts {\n    date\n    title\n    teaser(maxLength: 20)\n    id\n  }\n}": types.PostListPageDocument,
     "query PostPage($postId: ID!) {\n  post(postId: $postId) {\n    id\n    title\n    date\n    body\n    likes\n  }\n}": types.PostPageDocument,
 };
@@ -41,6 +42,10 @@ export function gql(source: "mutation AddBlogPost($postData: NewBlogPost!) {\n  
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "mutation LikePost($postId: ID!) {\n  likePost(postId: $postId) {\n    blogPost {\n      id\n      likes\n    }\n  }\n}"): (typeof documents)["mutation LikePost($postId: ID!) {\n  likePost(postId: $postId) {\n    blogPost {\n      id\n      likes\n    }\n  }\n}"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "query PostComments($postId: ID!) {\n  comments(postId: $postId) {\n    id\n    comment\n    username\n  }\n}"): (typeof documents)["query PostComments($postId: ID!) {\n  comments(postId: $postId) {\n    id\n    comment\n    username\n  }\n}"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

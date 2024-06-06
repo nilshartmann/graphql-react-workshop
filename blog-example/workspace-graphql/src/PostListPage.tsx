@@ -2,23 +2,13 @@ import React from "react";
 import PostList from "./PostList";
 import { gql, useQuery } from "@apollo/client";
 
-const PostListDoc = gql`
-query {
-  __typename
-}
-
-`
-
 export default function PostListPage() {
-
-  const {data} = useQuery()
-
   // ÜBUNG: useQuery
   //
   // -- Diese Seite soll die "Teaser" aller Blog Posts anzeigen
 
   //   1. Der Query ist in PostListPage.query.graphql definiert und die entsprechenden
-  //      Document- und Query-Objekte bzw. Typen sind dafür bereits generiert
+  //      PostListPageDocument- und Query-Objekte bzw. Typen sind dafür bereits generiert
 
   //   2. Verwende 'useQuery' um den Query auszuführen
   //     - Während die Daten geladen werden, zeige eine Meldung an ("Bitte warten Sie")

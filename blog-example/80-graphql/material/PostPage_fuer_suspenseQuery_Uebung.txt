@@ -1,0 +1,82 @@
+import * as React from "react";
+import Post from "./Post";
+import { useParams, Link } from "react-router-dom";
+import {useMutation, useQuery, useSuspenseQuery} from "@apollo/client";
+import { LikePostDocument, PostPageDocument } from "./__generated__/graphql";
+import { Suspense } from "react";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+
+function usePostIdParam() {
+	const { postId } = useParams<{ postId: string }>();
+
+	if (!postId) {
+		throw new Error("Missing parameter postId in URL path");
+	}
+
+	return postId;
+}
+
+
+export default function PostPage() {
+
+	const blogPostId = usePostIdParam();
+
+	return <PostPageInternal blogPostId={blogPostId} />
+}
+
+
+type PostPageInternalProps = {
+	blogPostId: string;
+};
+
+function PostPageInternal({ blogPostId }: PostPageInternalProps) {
+
+	// ÜBUNG: useSuspenseQuery
+	//  - stelle den Query auf 'useSuspenseQuery' um
+	//  - vereinfache die 'if'-Abfragen unten
+	//  - füge in PostPage die React.Suspense-Komponente hinzu, um eine Wartemeldung anzuzeigen
+	//
+	// - Optional:
+	//   - Lege mit ErrorBoundary aus dem Modul "react-error-boundary" einen Error Boundary an,
+	//      der bei Fehler beim Laden der Daten eine Fehlermeldung anzeigt
+
+	const { loading, error, data } = useQuery(PostPageDocument, {
+		variables: {
+			postId: blogPostId
+		}
+	});
+
+	const [likePost] = useMutation(LikePostDocument, {
+		variables: {
+			postId: blogPostId
+		}
+	});
+
+	if (loading) {
+		return <h1>Loading, please wait...</h1>;
+	}
+
+	if (error) {
+		return <h1>GraphQL Failed: {error.toString()}</h1>;
+	}
+	if (data && data.post) {
+		return (
+			<>
+				<Link className="Button" to="/">
+					Home
+				</Link>
+				<Post post={data.post} />
+
+				<div>
+					<p>{data.post.likes} likes</p>
+
+					<button onClick={() => likePost()}>Like!</button>
+				</div>
+			</>
+		);
+	}
+
+	return <h1>Please wait, Post is loading</h1>;
+}
+
+
