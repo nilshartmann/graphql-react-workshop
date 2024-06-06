@@ -1,0 +1,9 @@
+query PostPage($postId: ID!) {
+  post(postId: $postId) {
+    id
+    title
+    date
+    body
+    likes
+  }
+}

@@ -1,0 +1,5 @@
+
+## Alle generiert:
+src/__generated__/
+src/reportWebVitals.ts
+src/setupTests.ts

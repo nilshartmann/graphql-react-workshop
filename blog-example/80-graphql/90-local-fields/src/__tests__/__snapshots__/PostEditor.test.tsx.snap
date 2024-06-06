@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders correctly 1`] = `
+<DocumentFragment>
+  <div
+    class="Container"
+  >
+    <h1>
+      Create Post
+    </h1>
+    <label>
+      Title
+      <input
+        value=""
+      />
+    </label>
+    <p
+      style="color: red; font-weight: bold;"
+    >
+      Please enter a title
+    </p>
+    <label>
+      Body
+      <textarea />
+    </label>
+    <p
+      style="color: red; font-weight: bold;"
+    >
+      Please enter a body
+    </p>
+    <button
+      disabled=""
+    >
+      Clear
+    </button>
+    <button
+      disabled=""
+    >
+      Save Post
+    </button>
+  </div>
+</DocumentFragment>
+`;

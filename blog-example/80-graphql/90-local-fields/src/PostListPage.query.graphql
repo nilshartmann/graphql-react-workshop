@@ -1,0 +1,9 @@
+query PostListPage {
+  posts {
+    date
+    formattedDate @client
+    title
+    teaser(maxLength: 20)
+    id
+  }
+}

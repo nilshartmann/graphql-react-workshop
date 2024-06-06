@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders correctly 1`] = `
+<DocumentFragment>
+  <a
+    class="Button"
+    href="/add"
+  >
+    Add Post
+  </a>
+  <article
+    class="Container"
+  >
+    <a
+      href="/post/1"
+    >
+      <h2>
+        One
+      </h2>
+    </a>
+    <p
+      class="Date"
+    >
+      2019-08-23
+    </p>
+    <p />
+  </article>
+  <article
+    class="Container"
+  >
+    <a
+      href="/post/2"
+    >
+      <h2>
+        Second Post
+      </h2>
+    </a>
+    <p
+      class="Date"
+    >
+      2019-09-22
+    </p>
+    <p />
+  </article>
+</DocumentFragment>
+`;
