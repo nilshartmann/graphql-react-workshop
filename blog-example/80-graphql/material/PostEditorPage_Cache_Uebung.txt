@@ -1,6 +1,8 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AddBlogPostDocument, PostListPageDocument } from "./__generated__/graphql";
+import {
+  AddBlogPostDocument, BlogPostIdsQuery,
+} from "./__generated__/graphql";
 import PostEditor from "./PostEditor";
 import { NewBlogPost } from "./types";
 import { gql, useMutation } from "@apollo/client";
@@ -16,8 +18,18 @@ function SuccessConfirmation() {
   );
 }
 
-type BlogPostIds = { posts: Array<{ id: string }> };
-
+/**
+ * Das ist der Query, mit dem du den Cache nach allen vorhanden Ids abfragen kannst
+ *
+ *  - Der TypeScript-Typ für das Ergebnis heißt BlogPostIdsQuery
+ */
+const blogPostQuery = gql`
+  query BlogPostIds {
+    posts {
+      id
+    }
+  }
+  `
 export default function PostEditorPage() {
   const [mutate, { error, data, called, loading }] = useMutation(AddBlogPostDocument);
   const navigate = useNavigate();
@@ -26,16 +38,11 @@ export default function PostEditorPage() {
       variables: {
         postData: post
       },
-      // todo: entferne refetchQueries und füge die update-Funktion hinzu
+      // todo: implementiere die update Funktion
       //
-      //  - Wenn die update-Funktion NICHT mit data bzw. KEINEM neuen BlogPost
-      //     aufgerufen wurde, kannst Du die Funktion einfach mit "return" verlassen
-      //
-      //  - Sonst musst Du mit `readQuery` die Liste aller
-      //    BlogPosts aus dem Cache lesen
-      //    - Definiere dafür mit 'gql' einen GraphQL Query, der die 'id's aller
-      //      Posts ausliest
-      //      - TypeScript-Typ für das Ergebnis von `readQuery` ist BlogPostIds (s.o.)
+      //  - Mit `readQuery` die Liste aller  BlogPosts aus dem Cache lesen
+      //    - Der Query ist oben schon definiert ("blogPostQuery")
+      //    - Der TypeScript-Typ für das Typ-Argument von readQuery ist BlogPostIdsQuery
       //  - Wenn es noch keine Einträge im Cache gibt, erzeuge eine neue Liste,
       //    die nur aus dem neuen BlogPost besteht
       //  - Wenn es bereits Einträge im Cache gibt, füge den BlogPost in die
@@ -44,14 +51,17 @@ export default function PostEditorPage() {
       //    - Achtung: Bestehende Liste nicht verändern, sondern Kopie erzeugen!
       //  - Schreibe die neue Liste mit 'writeQuery' zurück
       //    - Als 'query' kannst Du dafür denselben Query wie bei 'readQuery'
-      //      verwenden
-      // update(cache, result) {
-      // },
-      refetchQueries: [
-        {
-          query: PostListPageDocument
+      //      verwenden ("blogPostQuery")
+      update(cache, result) {
+        const newBlogPost = result.data?.newPost;
+
+        if (!newBlogPost) {
+          // Kein neuer Blog-Post
+          // Sollte nicht vorkommen, aber um TS zu beruhigen, prüfen wir das hier
+          // und verlassen ggf. die Methode
+          return;
         }
-      ]
+      },
     });
 
     if (data?.newPost.blogPost) {

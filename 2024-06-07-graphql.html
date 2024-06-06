@@ -763,7 +763,8 @@ kann man schreiben:
 ### Nach einer Mutation... wird der Cache automatisch aktualisiert (eventuell)
 * Wenn deine Mutation ein Objekt zurückliefert, das sich bereits im Cache befindet, wird
             es dort aktualisiert
-* PostPage, Like vergeben <!-- .element: class="demo" -->             
+* PostPage, Like vergeben <!-- .element: class="demo" -->
+* Einzel Darstellung in Navigationsspalte, Like vergeben <!-- .element: class="demo" -->
 * Beispiel: Du *aktualisierst* eine existierende Story und das Ergebnis der
             Mutation enthält irgendwo die aktualisierte Story (zumindest die aktualisierten Teile).
   * Voraussetzung: im Ergebnis kommt auch die `id` der Story vor
@@ -814,7 +815,7 @@ kann man schreiben:
 ### Testen von GraphQL Clients
 
 * Wenn ihr GraphQL Anwendungen testen wollt, müsst ihr möglicherweise den Netzwerkverkehr mocken
-* Dazu könnt ihr die besprochenen Techniken verwenden (jest-fetch-mock, msw, etc.)
+* Dazu könnt ihr die Netzwerk-Zugriffe mocken (z.B. jest-fetch-mock, msw, etc.)
 * Alternativ: [MockedProvider](https://www.apollographql.com/docs/react/development-testing/testing) von GraphQL
 * Damit könnt ihr Ergebnisse von Queries setzen
 * Der Apollo Client liefert dann die Mock-Ergebnisse zurück und führt keine Netzwerkanfragen aus

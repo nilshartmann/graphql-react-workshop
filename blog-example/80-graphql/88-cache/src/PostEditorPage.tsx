@@ -1,9 +1,11 @@
-import { gql, useMutation } from "@apollo/client";
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  AddBlogPostDocument, BlogPostIdsQuery,
+} from "./__generated__/graphql";
 import PostEditor from "./PostEditor";
 import { NewBlogPost } from "./types";
-import { AddBlogPostDocument } from "./__generated__/graphql";
+import { gql, useMutation } from "@apollo/client";
 
 function SuccessConfirmation() {
   return (
@@ -16,6 +18,18 @@ function SuccessConfirmation() {
   );
 }
 
+/**
+ * Das ist der Query, mit dem du den Cache nach allen vorhanden Ids abfragen kannst
+ *
+ *  - Der TypeScript-Typ für das Ergebnis heißt BlogPostIdsQuery
+ */
+const blogPostQuery = gql`
+  query BlogPostIds {
+    posts {
+      id
+    }
+  }
+`
 export default function PostEditorPage() {
   const [mutate, { error, data, called, loading }] = useMutation(AddBlogPostDocument);
   const navigate = useNavigate();
@@ -24,30 +38,38 @@ export default function PostEditorPage() {
       variables: {
         postData: post
       },
-      update(cache, { data }) {
-        const newBlogPost = data?.newPost.blogPost;
+      // todo: implementiere die update Funktion
+      //
+      //  - Mit `readQuery` die Liste aller  BlogPosts aus dem Cache lesen
+      //    - Der Query ist oben schon definiert ("blogPostQuery")
+      //    - Der TypeScript-Typ für das Typ-Argument von readQuery ist BlogPostIdsQuery
+      //  - Wenn es noch keine Einträge im Cache gibt, erzeuge eine neue Liste,
+      //    die nur aus dem neuen BlogPost besteht
+      //  - Wenn es bereits Einträge im Cache gibt, füge den BlogPost in die
+      //    Liste ein.
+      //    - Der neue Post soll am Anfang der Liste stehen
+      //    - Achtung: Bestehende Liste nicht verändern, sondern Kopie erzeugen!
+      //  - Schreibe die neue Liste mit 'writeQuery' zurück
+      //    - Als 'query' kannst Du dafür denselben Query wie bei 'readQuery'
+      //      verwenden ("blogPostQuery")
+      update(cache, result) {
+        const newBlogPost = result.data?.newPost;
+
         if (!newBlogPost) {
+          // Kein neuer Blog-Post
+          // Sollte nicht vorkommen, aber um TS zu beruhigen, prüfen wir das hier
+          // und verlassen ggf. die Methode
           return;
         }
-        const query = gql`
-          {
-            posts {
-              id
-            }
-          }
-        `;
 
-        const existingPosts = cache.readQuery<{ posts: Array<{ id: string }> }>({
-          query
-        });
-
+        const existingPosts = cache.readQuery<BlogPostIdsQuery>({query: blogPostQuery});
         const newPosts = existingPosts ? [newBlogPost, ...existingPosts.posts] : [newBlogPost];
 
         cache.writeQuery({
-          query,
+          query: blogPostQuery,
           data: { posts: newPosts }
         });
-      }
+      },
     });
 
     if (data?.newPost.blogPost) {
