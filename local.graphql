@@ -1,0 +1,72 @@
+# This file was generated. Do not edit manually.
+
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}
+
+directive @cacheControl(maxAge: Int, scope: CacheControlScope) on OBJECT | FIELD_DEFINITION | INTERFACE
+
+type BlogPost {
+    body: String!
+    date: String!
+    id: ID!
+    likes: Int!
+    "Returns the first n-th chars of the body"
+    teaser(maxLength: Int): String
+    title: String!
+    user: User!
+}
+
+type CreateBlogPostResult {
+    blogPost: BlogPost
+    error: String
+}
+
+type LikePostResult {
+    blogPost: BlogPost
+    error: String
+}
+
+type LoginResult {
+    error: String
+    token: String
+    user: User
+}
+
+type Mutation {
+    createBlogPost(postData: NewBlogPost!): CreateBlogPostResult!
+    likePost(postId: ID!): LikePostResult!
+    login(login: String!, password: String!): LoginResult!
+}
+
+type Query {
+    ping(msg: String): String!
+    post(postId: ID!): BlogPost
+    posts(page: Int, pageSize: Int): [BlogPost!]!
+    users: [User!]!
+}
+
+type Subscription {
+    onNewLike(postId: ID): BlogPost!
+}
+
+type User {
+    id: ID!
+    login: String!
+    name: String!
+}
+
+enum CacheControlScope {
+    PRIVATE
+    PUBLIC
+}
+
+"The `Upload` scalar type represents a file upload."
+scalar Upload
+
+input NewBlogPost {
+    body: String!
+    title: String!
+}

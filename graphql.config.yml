@@ -1,0 +1,6 @@
+schema: local.graphql
+documents: blog-example/workspace-graphql/**/*.{graphql,js,ts,tsx}
+extensions:
+  endpoints:
+    BlogExample:
+      url: http://localhost:4000/graphql
