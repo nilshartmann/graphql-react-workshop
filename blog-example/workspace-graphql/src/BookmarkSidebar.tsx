@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { IBookmark } from "./bookmarks";
+import PostView from "./PostView";
+import { useCounter } from "./use-counter";
 export default function Bookmarks() {
   // todo:
   //   - Implementiere die Funktion, so dass sie
@@ -10,8 +12,14 @@ export default function Bookmarks() {
 
   const bookmarks: IBookmark[] = [];
 
+  const counterVar = useCounter();
+
   return (
     <div>
+      <PostView blogPostId={"P7"} />
+
+      <p>Counter: {counterVar}</p>
+
       <h2>Bookmarks</h2>
 
       {bookmarks.map(b => {

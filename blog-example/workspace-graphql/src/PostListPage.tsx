@@ -1,21 +1,67 @@
 import React from "react";
 import PostList from "./PostList";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useLazyQuery, useQuery } from "@apollo/client";
+import {
+  PostListPageDocument,
+  PostListPageQuery,
+  UserMitIdUndNameFragment
+} from "./__generated__/graphql";
+
+// const postListPageQuery = gql`
+//   query PostList {
+//     posts {
+//       title
+//       teaser
+//       date
+//     }
+//   }
+// `;
+
+// type PostListPageQueryResult = {
+//   posts: Array<{
+//     id: string;
+//     title: string;
+//     teaser: string;
+//     date: string;
+//   }>;
+// };
 
 export default function PostListPage() {
-  // ÜBUNG: useQuery
+  //const result = useQuery<PostListPageQueryResult>(postListPageQuery);
+  const result = useQuery(PostListPageDocument, {
+    // fetchPolicy: "cache-and-network"
+    // pollInterval: 1000
+  });
+
+  // const [runQuery, result2] = useLazyQuery(PostListPageDocument, {
+  // });
   //
-  // -- Diese Seite soll die "Teaser" aller Blog Posts anzeigen
+  // runQuery();
 
-  //   1. Der Query ist in PostListPage.query.graphql definiert und die entsprechenden
-  //      PostListPageDocument- und Query-Objekte bzw. Typen sind dafür bereits generiert
+  // const result = usePostListQuery();
 
-  //   2. Verwende 'useQuery' um den Query auszuführen
-  //     - Während die Daten geladen werden, zeige eine Meldung an ("Bitte warten Sie")
-  //     - Wenn es einen Fehler gibt, zeige eine Fehlermeldung an
-  //     - Wenn die Daten geladen worden sind, übergib diese an die PostList-Komponente
-  //       - dank außerdem dran, dass 'data' auch undefined sein kann
-  //         (in dem Fall einfach einen Fehler ausgeben)
+  if (result.loading) {
+    return <h1>Blog Posts loading...</h1>;
+  }
 
-  return <h1>We need to implement this ... </h1>;
+  if (result.error) {
+    return <h1>Es ist ein Fehler aufgetreten</h1>;
+  }
+
+  if (!result.data) {
+    return <h1>...</h1>;
+  }
+
+  // ????
+  // console.log("result", result.data.posts[0].user.name);
+  // showUser(result.data.posts[0].user);
+
+  return (
+    <div>
+      <button onClick={() => result.refetch()}>Reload!</button>
+      <PostList posts={result.data.posts} />
+    </div>
+  );
 }
+
+// function showUser(user: UserMitIdUndNameFragment) {}

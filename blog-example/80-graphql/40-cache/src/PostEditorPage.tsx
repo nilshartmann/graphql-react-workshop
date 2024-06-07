@@ -1,8 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  AddBlogPostDocument, BlogPostIdsQuery,
-} from "./__generated__/graphql";
+import { AddBlogPostDocument, BlogPostIdsQuery } from "./__generated__/graphql";
 import PostEditor from "./PostEditor";
 import { NewBlogPost } from "./types";
 import { gql, useMutation } from "@apollo/client";
@@ -29,7 +27,7 @@ const blogPostQuery = gql`
       id
     }
   }
-`
+`;
 export default function PostEditorPage() {
   const [mutate, { error, data, called, loading }] = useMutation(AddBlogPostDocument);
   const navigate = useNavigate();
@@ -62,14 +60,14 @@ export default function PostEditorPage() {
           return;
         }
 
-        const existingPosts = cache.readQuery<BlogPostIdsQuery>({query: blogPostQuery});
+        const existingPosts = cache.readQuery<BlogPostIdsQuery>({ query: blogPostQuery });
         const newPosts = existingPosts ? [newBlogPost, ...existingPosts.posts] : [newBlogPost];
 
         cache.writeQuery({
           query: blogPostQuery,
           data: { posts: newPosts }
         });
-      },
+      }
     });
 
     if (data?.newPost.blogPost) {

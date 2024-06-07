@@ -5,5 +5,7 @@ query PostPage($postId: ID!) {
     date
     body
     likes
+
+    formattedDate @client
   }
 }
