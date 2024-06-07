@@ -550,7 +550,7 @@ root.render(
 * Die `PostPage` soll einen Blog Post darstellen und einen Like-Button haben
   * Ergänze in `src/PostPage.tsx` den dazu notwendigen Code
 * In den Dateien findest Du TODOs mit weiteren Informationen
-* Eine mögliche Lösung findest Du in der Datei <code>steps/80-graphql/10-use-query/src/</code>
+* Eine mögliche Lösung findest Du in der Datei <code>80-graphql/10-use-query/src/</code>
 * Wenn du fertig bist, bitte virtuell Hand heben 🤚
 
 ---
@@ -810,8 +810,8 @@ kann man schreiben:
 * Die Mutation (`AddBlogPostMutation`) ist schon fertig und der Code dafür generiert
 * In `PostEditorPage` musst Du den Code vervollständigen, siehe dort für weitere Informationen
 * Was musst du tun, damit der neu gespeicherte Blog Post auch in der Liste auf der ersten Seite angezeigt wird?
-* Mögliche Lösung in `steps/80-graphql/20-use-mutation`
-
+* Mögliche Lösung in `80-graphql/20-use-mutation`
+* Wenn du fertig bist, bitte Hand in Zoom heben oder Nachricht in den Chat ✋
 ---
 ### Testen von GraphQL Clients
 
@@ -903,7 +903,7 @@ const mock: MockedResponse<PostListPageQuery> = {
 * Du musst dort die Mocks korrekt definieren, ein Anfang findest Du dort bereits
 * Tipp: mit TypeScript oder im Netzwerk-Tab der laufenden Anwendung prüfen, wie die Daten aussehen, die zurückgegeben werden müssen.
 * Du kannst die Tests ausführen mit: `npm test -- PostPage`
-* Eine mögliche Lösung findest Du in `steps/80-graphql/30-test/src/__tests__`
+* Eine mögliche Lösung findest Du in `80-graphql/30-test/src/__tests__`
 * Wenn Du fertig bist, bitte virtuell Hand heben! ✋
             
 ---
@@ -1012,31 +1012,42 @@ const mock: MockedResponse<PostListPageQuery> = {
 <!-- .slide: class="left" -->
 * Vollständiges Beispiel mit TypeScript und Prüfungen
 * ```javascript
-  const ReadPostsFromCache = gql`{ posts { id } }`;
+  const blogPostQuery = gql`
+    query BlogPostIds { posts { id }  }
+  `
 
-  function PostEditorPage() {
-    function savePost(newPost) {
-      mutate({
-        variables: {...},
-        update: (cache, {data}) => {
-          if (!data) { return; }
-          const newBlogPost = data.newPost.blogPost;
+  export default function PostEditorPage() {
+    const [mutate, { error, data, called, loading }] = useMutation(AddBlogPostDocument);
+    async function savePost(post: NewBlogPost) {
+      const { data } = await mutate({
+        variables: {
+          postData: post
+        },
 
-          const existingPosts = cache.readQuery<{ posts: Array<{ id: string }> }>({
-            query: ReadPostsFromCache
-          });
+        update(cache, result) {
+
+          const newBlogPost = result.data?.newPost;
+
+          if (!newBlogPost) {
+            return;
+          }
+
+          const existingPosts = cache.readQuery<BlogPostIdsQuery>({query: blogPostQuery});
 
           const newPosts = existingPosts ? [newBlogPost, ...existingPosts.posts] : [newBlogPost];
-          
-          cache.writeQuery({
-            query: ReadPostsFromCache,
-            data: { posts: [data.newPost, ...existingPosts] }
-          });
-      })
-    }
 
-    return ...;
+          cache.writeQuery({
+            query: blogPostQuery,
+            data: { posts: newPosts }
+          });
+        },
+      });
+
+   // ...
+
+    return <PostEditor onSavePost={savePost} error={errorMessage} />;
   }
+
   ``` 
 
 ---
@@ -1177,9 +1188,9 @@ const mock: MockedResponse<PostListPageQuery> = {
 ---
 ### Übung: Den Cache manuell aktualisieren
 * Implementiere die `update`-Funktion für die `addPost`-Mutation
-* Kopiere dazu die Datei `steps/80-graphql/material/PostEditorPage_Cache_Uebung.txt` in deinen Workspace (überschreibe deine `PostEditorPage.tsx`-Datei)
+* Kopiere dazu die Datei `80-graphql/material/PostEditorPage_Cache_Uebung.txt` in deinen Workspace (überschreibe deine `PostEditorPage.tsx`-Datei)
 * Die Beschreibung dazu findest Du dann in der kopierten `PostEditorPage`-Datei
-* Eine mögliche Lösung findest Du in `steps/80-graphql/40-cache/src`
+* Eine mögliche Lösung findest Du in `80-graphql/40-cache/src`
 * Wenn Du fertig bist, bitte virtuell die Hand heben ✋
 ---
 ## Suspense
@@ -1350,7 +1361,7 @@ const mock: MockedResponse<PostListPageQuery> = {
 * **Stelle die `PostPage`-Komponente auf `Suspense` um.**
 * Damit es zur (künstlichen) Verzögerungen kommt:
   * Beende das GraphQL Backend
-  * Starte das Backend mit `npm run start:slow` neu
+  * Starte das Backend (Verzeichnis: `backend-graphql`) mit `npm run start:slow` neu
     * Alle `post`-GraphQL Queries sind nun künstlich verzögert
 * Als Vorlage kannst Du `material/PostPage_fuer_suspenseQuery_Uebung.txt` verwenden
   * darin sind auch TODOs (`PostPage.tsx` in deinem Workspace damit überschreiben)
@@ -1358,9 +1369,10 @@ const mock: MockedResponse<PostListPageQuery> = {
   * Ersetze darin den `useQuery`-Aufruf durch `useSuspenseQuery`
 * In der `PostPage` musst Du dann deine Wrapper-Komponente einbinden und mit `React.Suspense` ummanteln
   * Was passiert, wenn Du keine Suspense-Komponente verwendest, sondern nur deine "Wrapper"-Komponente renderst?
+* Wenn du damit fertig bist, bitte Hand heben ✋
 * Optional: Behandle Fehler mit einer `ErrorBoundary`-Komponente
   * Einen Fehler kannst Du provozieren, in dem Du das Backend beendest
-* Lösung in `steps/50-suspense`
+* Lösung in `50-suspense`
 ---
 ### Suspense: Konsequenzen
 
@@ -1677,7 +1689,7 @@ const mock: MockedResponse<PostListPageQuery> = {
     entfernen kann
   * Über den `path` des Bookmarks kannst Du auch einen Link zur Post-Ansicht bauen, wenn Du willst (`<Link to={bookmark.path}>...</Link>`)  
 * Weitere Hinweise findest Du in `bookmarks.ts`
-* Lösung: `steps/80-graphql/92-cache`
+* Lösung: `80-graphql/92-cache`
 * Wenn Du fertig bist, bitte virtuell die Hand heben ✋
 
 
